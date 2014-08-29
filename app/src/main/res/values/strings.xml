@@ -4,5 +4,8 @@
     <string name="app_name">Prompt Time</string>
     <string name="title_section_active_times">Active Times</string>
     <string name="title_section_prompt">Prompt</string>
+    <string name="label_set_time_block">Set Active Times</string>
+    <string name="label_time_block_start">Start Time</string>
+    <string name="label_time_block_end">End Time</string>
 
 </resources>
