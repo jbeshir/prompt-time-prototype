@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Prompt Time</string>
+    <string name="title_section_active_times">Active Times</string>
+    <string name="title_section_prompt">Prompt</string>
+
+</resources>
