@@ -17,6 +17,8 @@ import android.view.ViewGroup;
 
 public class PromptTime extends ActionBarActivity implements ActionBar.TabListener {
 
+    ActiveTimesStorage activeTimesStorage;
+
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
      * fragments for each of the sections. We use a
@@ -70,6 +72,14 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
                             .setText(mSectionsPagerAdapter.getPageTitle(i))
                             .setTabListener(this));
         }
+
+        // Set up our active time storage class.
+        activeTimesStorage = new ActiveTimesStorage("active_times");
+
+        // Try to load saved active times.
+        // If we fail, hide the tabs; we need to have the user pick times first.
+        if (!activeTimesStorage.load())
+            actionBar.hide();
     }
 
     @Override
