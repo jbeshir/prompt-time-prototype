@@ -5,7 +5,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -14,12 +13,15 @@ import java.io.PrintWriter;
 
 public class ActiveTimesStorage {
 
-    private final String path;
+    private final String activeTimesPath;
+    private final String nextPromptTimePath;
 
     private JSONArray activeTimeBlocks = new JSONArray();
+    private long nextPromptTimeSeconds = 0L;
 
-    public ActiveTimesStorage(String path) {
-        this.path = path;
+    public ActiveTimesStorage(String activeTimesPath, String nextPromptTimePath) {
+        this.activeTimesPath = activeTimesPath;
+        this.nextPromptTimePath = nextPromptTimePath;
     }
 
     public boolean load() {
@@ -28,20 +30,23 @@ public class ActiveTimesStorage {
         // which is defined as successfully reading at least one block.
         try {
             activeTimeBlocks = loadActiveTimes();
-        } catch (JSONException e) {
+            nextPromptTimeSeconds = loadNextPromptTime();
+        } catch (Exception e) {
 
             // Treat it as an empty read.
             activeTimeBlocks = new JSONArray();
+            nextPromptTimeSeconds = 0L;
         }
 
         if (activeTimeBlocks.length() == 0) {
-            activeTimeBlocks = new JSONArray();
-            JSONObject defaultTimeBlock = generateDefaultTimeBlock();
-            activeTimeBlocks.put(defaultTimeBlock);
             return false;
         } else {
             return true;
         }
+    }
+
+    public int getCount() {
+        return activeTimeBlocks.length();
     }
 
     public boolean getDayOfWeek(int blockIndex, int dayOfWeek) {
@@ -88,15 +93,17 @@ public class ActiveTimesStorage {
         return getInteger(blockIndex, "end_time");
     }
 
+    public long getNextPromptTime() {
+        return nextPromptTimeSeconds;
+    }
+
     // Validates and saves a changed active time.
     // If validation fails, returns false.
     public boolean set(int blockIndex, boolean mon, boolean tue, boolean wed, boolean thur, boolean fri,
                        boolean sat, boolean sun, int startTime, int endTime) {
 
-        // Validate the given settings.
-        if (startTime > endTime) {
-            return false;
-        }
+        // An end time which is before a start time is legal,
+        // and means we run past midnight, through to that time next day.
 
         // Save changes.
         JSONObject newTimeBlock = new JSONObject();
@@ -121,12 +128,45 @@ public class ActiveTimesStorage {
         }
     }
 
+    public void delete(int blockIndex) {
+        JSONArray newActiveTimeBlocks = new JSONArray();
+        for (int i = 0; i < activeTimeBlocks.length(); i++) {
+            if (i == blockIndex) {
+                continue;
+            }
+
+            try {
+                newActiveTimeBlocks.put(activeTimeBlocks.get(i));
+            }
+            catch (JSONException e) {
+                // This should never happen.
+                return;
+            }
+        }
+
+        activeTimeBlocks = newActiveTimeBlocks;
+        saveActiveTimes();
+    }
+
+    public void setNextPromptTime(long seconds) {
+        this.nextPromptTimeSeconds = seconds;
+        saveNextPromptTime();
+    }
+
     private JSONArray loadActiveTimes() throws JSONException {
-        return new JSONArray(readFileAsString(path));
+        return new JSONArray(readFileAsString(activeTimesPath));
     }
 
     private void saveActiveTimes() {
-        writeStringToFile(path, activeTimeBlocks.toString());
+        writeStringToFile(activeTimesPath, activeTimeBlocks.toString());
+    }
+
+    private long loadNextPromptTime() {
+        return Long.parseLong(readFileAsString(nextPromptTimePath));
+    }
+
+    private void saveNextPromptTime() {
+        writeStringToFile(nextPromptTimePath, Long.toString(nextPromptTimeSeconds));
     }
 
     private Integer getInteger(int blockIndex, String name) {
@@ -165,8 +205,8 @@ public class ActiveTimesStorage {
                 defaultTimeBlock.put(getDayOfWeekSettingName(i), true);
             }
             defaultTimeBlock.put(getDayOfWeekSettingName(6), false);
-            defaultTimeBlock.put("startTime", 1140);
-            defaultTimeBlock.put("endTime", 1320);
+            defaultTimeBlock.put("start_time", 1140);
+            defaultTimeBlock.put("end_time", 1320);
             return defaultTimeBlock;
         } catch (JSONException e) {
             throw new RuntimeException(e);
@@ -208,7 +248,7 @@ public class ActiveTimesStorage {
             return sb.toString();
         } catch (FileNotFoundException e) {
 
-            // If there's no options file present,
+            // If there's no options file present, treat as empty.
             return "";
         } catch (IOException e) {
             return "";

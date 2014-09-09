@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/active_times_block"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_horizontal">
+
+    <LinearLayout
+        android:id="@+id/weekday_toggles"
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical">
+
+        <ToggleButton
+            android:id="@+id/monday_toggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textOn="Mon"
+            android:textOff="Mon"
+            android:onClick="onSetActiveTimes"/>
+
+        <ToggleButton
+            android:id="@+id/tuesday_toggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textOn="Tue"
+            android:textOff="Tue"
+            android:onClick="onSetActiveTimes"/>
+
+        <ToggleButton
+            android:id="@+id/wednesday_toggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textOn="Wed"
+            android:textOff="Wed"
+            android:onClick="onSetActiveTimes"/>
+
+        <ToggleButton
+            android:id="@+id/thursday_toggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textOn="Thur"
+            android:textOff="Thur"
+            android:onClick="onSetActiveTimes"/>
+
+        <ToggleButton
+            android:id="@+id/friday_toggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textOn="Fri"
+            android:textOff="Fri"
+            android:onClick="onSetActiveTimes"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/weekend_toggles"
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical">
+
+        <ToggleButton
+            android:id="@+id/saturday_toggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textOn="Sat"
+            android:textOff="Sat"
+            android:onClick="onSetActiveTimes"/>
+
+        <ToggleButton
+            android:id="@+id/sunday_toggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textOn="Sun"
+            android:textOff="Sun"
+            android:onClick="onSetActiveTimes"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/start_time_row"
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/start_time_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/label_time_block_start"/>
+
+        <TimePicker
+            android:id="@+id/start_time_picker"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/end_time_row"
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/end_time_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/label_time_block_end"/>
+
+        <TimePicker
+            android:id="@+id/end_time_picker"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/button_row"
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical">
+
+        <Button
+            android:id="@+id/remove_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/label_remove_time_block"
+            android:onClick="onRemoveTimeBlock"/>
+
+        <Button
+            android:id="@+id/save_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/label_set_time_block"
+            android:onClick="onSetActiveTimes"/>
+
+        </LinearLayout>
+
+</LinearLayout>

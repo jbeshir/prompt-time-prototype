@@ -2,6 +2,16 @@ package org.beshir.prompttime;
 
 import java.util.Locale;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.media.AudioManager;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
+import android.os.CountDownTimer;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBar;
 import android.support.v4.app.Fragment;
@@ -13,11 +23,26 @@ import android.support.v4.view.ViewPager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.BaseAdapter;
+import android.widget.Button;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.TimePicker;
+import android.widget.ToggleButton;
 
 
-public class PromptTime extends ActionBarActivity implements ActionBar.TabListener {
+public class PromptTime extends ActionBarActivity implements ActionBar.TabListener, ICountDownChangeListener, TimePicker.OnTimeChangedListener {
 
-    ActiveTimesStorage activeTimesStorage;
+    private static ActiveTimesStorage activeTimesStorage;
+    private static CountDownState countDownState = new CountDownState();
+    private static boolean showNewTimeBlock = false;
+
+    // Whether we are currently updating our own active time block state.
+    // Causes us to ignore changes, and not automatically save them.
+    private static boolean updatingTimeBlockState = false;
+
+    private static BaseAdapter activeTimesListAdapter = null;
+    private static Ringtone currentlyPlayingRingtone = null;
 
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
@@ -73,13 +98,37 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
                             .setTabListener(this));
         }
 
-        // Set up our active time storage class.
-        activeTimesStorage = new ActiveTimesStorage("active_times");
+        // Setup active times storage handler.
+        activeTimesStorage = new ActiveTimesStorage(getFilesDir().getPath() + "active_times",
+                getFilesDir().getPath() + "next_prompt_time");
 
         // Try to load saved active times.
         // If we fail, hide the tabs; we need to have the user pick times first.
-        if (!activeTimesStorage.load())
+        if (!activeTimesStorage.load()) {
             actionBar.hide();
+        } else {
+            mViewPager.setCurrentItem(1);
+        }
+
+        // Register our alarm handler.
+        // We have to do this before setting up the countdown state,
+        // because we could try start the alarm there.
+
+        // Setup our countdown state.
+        countDownState.addListener(this);
+        countDownState.setStorage(activeTimesStorage);
+    }
+
+    @Override
+    protected void onNewIntent(Intent i) {
+
+        // On receiving a new intent, reset to the prompt if it is enabled.
+        if (getSupportActionBar().isShowing()) {
+            mViewPager.setCurrentItem(1);
+        }
+
+        // On receiving a new intent, always check whether we need to update our alarm state.
+        onCountDownChanged(System.currentTimeMillis() / 1000);
     }
 
     @Override
@@ -95,6 +144,275 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
 
     @Override
     public void onTabReselected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
+    }
+
+    public void onCountDownChanged(long currentTime) {
+
+        long nextEventTime = countDownState.getNextEvent(currentTime);
+        boolean nextEventPrompt = countDownState.isNextEventPrompt();
+
+        // Play our alarm sound, if we are showing a prompt,
+        // and halt it otherwise.
+        if (nextEventTime == currentTime) {
+            if (currentlyPlayingRingtone == null) {
+                Uri alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+
+                if(alert == null){
+                    // alert is null, using backup
+                    alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+
+                    // I can't see this ever being null (as always have a default notification)
+                    // but just incase
+                    if(alert == null) {
+                        // alert backup is null, using 2nd backup
+                        alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+                    }
+                }
+
+                currentlyPlayingRingtone = RingtoneManager.getRingtone(getApplicationContext(), alert);
+                currentlyPlayingRingtone.setStreamType(AudioManager.STREAM_NOTIFICATION);
+                currentlyPlayingRingtone.play();
+
+                // Mute music temporarily while our notification sound plays.
+                AudioManager audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+                audioManager.setStreamSolo(AudioManager.STREAM_NOTIFICATION, true);
+            }
+        } else {
+            if (currentlyPlayingRingtone != null) {
+                currentlyPlayingRingtone.stop();
+                currentlyPlayingRingtone = null;
+
+                // Unmute music now our notification sound is over.
+                AudioManager audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+                audioManager.setStreamSolo(AudioManager.STREAM_NOTIFICATION, false);
+            }
+        }
+
+        // If we're waiting for a prompt event, schedule an alarm when it arrives.
+        // We cancel any existing alarm either way.
+        AlarmManager alarmManager = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
+        Intent i = new Intent(this, PromptTimeAlarmBroadcastReceiver.class);
+        PendingIntent alarmPendingIntent = PendingIntent.getBroadcast(this, 0, i, 0);
+        alarmManager.cancel(alarmPendingIntent);
+        if (nextEventTime != currentTime && nextEventTime != Long.MAX_VALUE && nextEventPrompt) {
+            alarmManager.set(AlarmManager.RTC_WAKEUP, nextEventTime * 1000, alarmPendingIntent);
+        }
+    }
+
+    public void onSetActiveTimes(View view) {
+
+        // Ignore programmatic changes.
+        if (updatingTimeBlockState) {
+            return;
+        }
+
+        // The grandparent of the view has our view information in a holder as a tag.
+        ActiveTimesBlockViewHolder activeTimesBlock;
+        activeTimesBlock = (ActiveTimesBlockViewHolder)((View) view.getParent().getParent()).getTag();
+
+        // If this is a new block, don't do anything unless this was the save button being pressed.
+        // We wait until they save the block before acting.
+        if (view.getId() != R.id.save_button
+                && activeTimesBlock.blockIndex == activeTimesStorage.getCount()) {
+
+            return;
+        }
+
+        // Don't show a new time block any more, if this was one.
+        // We won't need to.
+        if (activeTimesBlock.blockIndex == activeTimesStorage.getCount()) {
+            showNewTimeBlock = false;
+        }
+
+        // Save the current state of the list item to the file.
+        int startTime = activeTimesBlock.startTimePicker.getCurrentHour() * 60 +
+                activeTimesBlock.startTimePicker.getCurrentMinute();
+        int endTime = activeTimesBlock.endTimePicker.getCurrentHour() * 60 +
+                activeTimesBlock.endTimePicker.getCurrentMinute();
+        activeTimesStorage.set(activeTimesBlock.blockIndex,
+                activeTimesBlock.mondayToggle.isChecked(),
+                activeTimesBlock.tuesdayToggle.isChecked(),
+                activeTimesBlock.wednesdayToggle.isChecked(),
+                activeTimesBlock.thursdayToggle.isChecked(),
+                activeTimesBlock.fridayToggle.isChecked(),
+                activeTimesBlock.saturdayToggle.isChecked(),
+                activeTimesBlock.sundayToggle.isChecked(),
+                startTime,
+                endTime);
+
+        countDownState.updateActiveTimeState(System.currentTimeMillis() / 1000);
+
+        // If we were previously hiding the tab bar, enable it.
+        getSupportActionBar().show();
+
+        // Trigger updates to the active times list, if this was from the save button.
+        // Changes of other things always leave the UI already up to date,
+        // and calling this can be disruptive.
+        if (view.getId() == R.id.save_button) {
+            activeTimesListAdapter.notifyDataSetChanged();
+        }
+    }
+
+    public void onTimeChanged(TimePicker view, int hourOfDay, int minute) {
+        onSetActiveTimes(view);
+    }
+
+    public void onPromptNow(View button) {
+        countDownState.setPromptTimeDelay(0);
+    }
+
+    public void onPromptFive(View button) {
+        countDownState.setPromptTimeDelay(5 * 60);
+    }
+
+    public void onPromptFifteen(View button) {
+        countDownState.setPromptTimeDelay(15 * 60);
+    }
+
+    public void onPromptTwentyFive(View button) {
+        countDownState.setPromptTimeDelay(25 * 60);
+    }
+
+    public void onPromptHour(View button) {
+        countDownState.setPromptTimeDelay(60 * 60);
+    }
+
+    public void onAddActiveTimesBlock(View button) {
+        showNewTimeBlock = true;
+        activeTimesListAdapter.notifyDataSetChanged();
+    }
+
+    public void onRemoveTimeBlock(View button) {
+        ActiveTimesBlockViewHolder viewHolder;
+        viewHolder = (ActiveTimesBlockViewHolder)((View) button.getParent().getParent()).getTag();
+
+        if (viewHolder.blockIndex == activeTimesStorage.getCount()) {
+            showNewTimeBlock = false;
+            activeTimesListAdapter.notifyDataSetChanged();
+        } else {
+            activeTimesStorage.delete(viewHolder.blockIndex);
+            activeTimesListAdapter.notifyDataSetChanged();
+            countDownState.updateActiveTimeState(System.currentTimeMillis() / 1000);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        countDownState.removeListener(this);
+        super.onDestroy();
+    }
+
+    public static class PromptTimeAlarmBroadcastReceiver extends BroadcastReceiver {
+
+        public void onReceive(Context context, Intent intent) {
+
+            //start activity
+            Intent i = new Intent();
+            i.setClassName("org.beshir.prompttime", "org.beshir.prompttime.PromptTime");
+            i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            context.startActivity(i);
+        }
+    }
+
+    static class ActiveTimesBlockViewHolder {
+        int blockIndex;
+
+        ToggleButton mondayToggle;
+        ToggleButton tuesdayToggle;
+        ToggleButton wednesdayToggle;
+        ToggleButton thursdayToggle;
+        ToggleButton fridayToggle;
+        ToggleButton saturdayToggle;
+        ToggleButton sundayToggle;
+
+        TimePicker startTimePicker;
+        TimePicker endTimePicker;
+
+        Button saveTimesButton;
+    }
+
+    public static class ActiveTimesListAdapter extends BaseAdapter {
+
+        LayoutInflater layoutInflater;
+        Context context;
+
+        private ActiveTimesBlockViewHolder viewHolder;
+
+        public ActiveTimesListAdapter(Context context) {
+            this.context = context;
+            layoutInflater = LayoutInflater.from(context);
+        }
+
+        @Override
+        public int getCount() {
+            return activeTimesStorage.getCount() + (showNewTimeBlock ? 1 : 0);
+        }
+
+        @Override
+        public Object getItem(int i) {
+            return null;
+        }
+
+        @Override
+        public long getItemId(int i) {
+            return i;
+        }
+
+        @Override
+        public View getView(int i, View convertView, ViewGroup parent) {
+            if (convertView == null) {
+                convertView = layoutInflater.inflate(R.layout.active_time_block, null);
+
+                viewHolder = new ActiveTimesBlockViewHolder();
+                viewHolder.blockIndex = i;
+
+                viewHolder.mondayToggle = (ToggleButton)convertView.findViewById(R.id.monday_toggle);
+                viewHolder.tuesdayToggle = (ToggleButton)convertView.findViewById(R.id.tuesday_toggle);
+                viewHolder.wednesdayToggle = (ToggleButton)convertView.findViewById(R.id.wednesday_toggle);
+                viewHolder.thursdayToggle = (ToggleButton)convertView.findViewById(R.id.thursday_toggle);
+                viewHolder.fridayToggle = (ToggleButton)convertView.findViewById(R.id.friday_toggle);
+                viewHolder.saturdayToggle = (ToggleButton)convertView.findViewById(R.id.saturday_toggle);
+                viewHolder.sundayToggle = (ToggleButton)convertView.findViewById(R.id.sunday_toggle);
+
+                viewHolder.startTimePicker = (TimePicker)convertView.findViewById(R.id.start_time_picker);
+                viewHolder.startTimePicker.setOnTimeChangedListener((TimePicker.OnTimeChangedListener)context);
+
+                viewHolder.endTimePicker = (TimePicker)convertView.findViewById(R.id.end_time_picker);
+                viewHolder.endTimePicker.setOnTimeChangedListener((TimePicker.OnTimeChangedListener)context);
+
+                viewHolder.saveTimesButton = (Button)convertView.findViewById(R.id.save_button);
+
+                convertView.setTag(viewHolder);
+            } else {
+                viewHolder = (ActiveTimesBlockViewHolder)convertView.getTag();
+                viewHolder.blockIndex = i;
+            }
+
+            updatingTimeBlockState = true;
+
+            viewHolder.mondayToggle.setChecked(activeTimesStorage.getDayOfWeek(i, 0));
+            viewHolder.tuesdayToggle.setChecked(activeTimesStorage.getDayOfWeek(i, 1));
+            viewHolder.wednesdayToggle.setChecked(activeTimesStorage.getDayOfWeek(i, 2));
+            viewHolder.thursdayToggle.setChecked(activeTimesStorage.getDayOfWeek(i, 3));
+            viewHolder.fridayToggle.setChecked(activeTimesStorage.getDayOfWeek(i, 4));
+            viewHolder.saturdayToggle.setChecked(activeTimesStorage.getDayOfWeek(i, 5));
+            viewHolder.sundayToggle.setChecked(activeTimesStorage.getDayOfWeek(i, 6));
+
+            int startTime = activeTimesStorage.getStartTime(i);
+            viewHolder.startTimePicker.setCurrentHour(startTime / 60);
+            viewHolder.startTimePicker.setCurrentMinute(startTime % 60);
+
+            int endTime = activeTimesStorage.getEndTime(i);
+            viewHolder.endTimePicker.setCurrentHour(endTime / 60);
+            viewHolder.endTimePicker.setCurrentMinute(endTime % 60);
+
+            int showSave = i == activeTimesStorage.getCount() ? View.VISIBLE : View.GONE;
+            viewHolder.saveTimesButton.setVisibility(showSave);
+
+            updatingTimeBlockState = false;
+
+            return convertView;
+        }
     }
 
     /**
@@ -161,13 +479,22 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
             return fragment;
         }
 
-        public SectionActiveTimesFragment() {
-        }
-
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_section_active_times, container, false);
+
+            // Setup the list view on our configuration panel to contain our active times.
+            ListView activeTimesListView = (ListView)rootView.findViewById(R.id.active_times_block_list);
+
+            if (activeTimesListAdapter == null) {
+                activeTimesListAdapter = new ActiveTimesListAdapter(getActivity());
+            }
+            activeTimesListView.setAdapter(activeTimesListAdapter);
+
+            View footerView = inflater.inflate(R.layout.active_time_footer, null, false);
+            activeTimesListView.addFooterView(footerView);
+
             return rootView;
         }
     }
@@ -175,7 +502,7 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
     /**
      * A fragment describing the active times section.
      */
-    public static class SectionPromptFragment extends Fragment {
+    public static class SectionPromptFragment extends Fragment implements ICountDownChangeListener {
         /**
          * The fragment argument representing the section number for this
          * fragment.
@@ -194,14 +521,91 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
             return fragment;
         }
 
+        private CountDownTimer countDownTimer;
+        private View rootView;
+
         public SectionPromptFragment() {
+        }
+
+        public void onCountDownChanged(long currentTime) {
+            if (countDownTimer != null) {
+                countDownTimer.cancel();
+                countDownTimer = null;
+            }
+
+            long nextEvent = countDownState.getNextEvent(currentTime);
+            boolean inActiveTime = countDownState.isInActiveTime();
+            long countDownTime = nextEvent - currentTime;
+            int visibilityNowButton = View.GONE;
+            int visibilityNextPromptButtons = View.GONE;
+            if (nextEvent == currentTime) {
+                ((TextView) rootView.findViewById(R.id.countdown)).setText("Prompt!");
+                visibilityNextPromptButtons = View.VISIBLE;
+            } else if (nextEvent == Long.MAX_VALUE) {
+                ((TextView) rootView.findViewById(R.id.countdown)).setText("None");
+            } else {
+                countDownTimer = new CountDownTimer(countDownTime * 1000, 1000) {
+
+                    public void onTick(long millisUntilFinished) {
+                        if (countDownTimer == null) {
+                            return;
+                        }
+
+                        long currentTime = System.currentTimeMillis() / 1000;
+                        long secondsToGo = countDownState.getNextEvent(currentTime) - currentTime;
+                        ((TextView) rootView.findViewById(R.id.countdown)).setText(Long.toString(secondsToGo));
+                    }
+
+                    public void onFinish() {
+                        if (countDownTimer == null) {
+                            return;
+                        }
+
+                        onCountDownChanged(System.currentTimeMillis() / 1000);
+                    }
+                }.start();
+                if (inActiveTime) {
+                    visibilityNowButton = View.VISIBLE;
+                }
+            }
+
+            rootView.findViewById(R.id.prompt_now_button).setVisibility(visibilityNowButton);
+            rootView.findViewById(R.id.prompt_five_button).setVisibility(visibilityNextPromptButtons);
+            rootView.findViewById(R.id.prompt_fifteen_button).setVisibility(visibilityNextPromptButtons);
+            rootView.findViewById(R.id.prompt_twenty_five_button).setVisibility(visibilityNextPromptButtons);
+            rootView.findViewById(R.id.prompt_hour_button).setVisibility(visibilityNextPromptButtons);
         }
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_section_prompt, container, false);
+            rootView = inflater.inflate(R.layout.fragment_section_prompt, container, false);
+
+            ((TextView)rootView.findViewById(R.id.prompt_label)).setText("Countdown");
+            ((TextView)rootView.findViewById(R.id.countdown)).setText("--:--");
+
+            // Register with our countdown state to receive notifications of changes.
+            countDownState.addListener(this);
+
+            // Update our view to correspond to the current countdown state.
+            onCountDownChanged(System.currentTimeMillis() / 1000);
+
             return rootView;
+        }
+
+        @Override
+        public void onDestroyView() {
+            if (countDownTimer != null) {
+                countDownTimer.cancel();
+                countDownTimer = null;
+            }
+
+            rootView = null;
+
+            // Stop receiving notifications of changes to our countdown state.
+            countDownState.removeListener(this);
+
+            super.onDestroyView();
         }
     }
 }
