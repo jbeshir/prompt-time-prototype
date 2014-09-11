@@ -17,9 +17,17 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name="org.beshir.prompttime.PromptTime$PromptTimeAlarmBroadcastReceiver">
+        <receiver android:name=".PromptTime$PromptTimeAlarmBroadcastReceiver" >
         </receiver>
+
+        <service
+            android:name=".AlarmService"
+            android:enabled="true"
+            android:exported="false"
+            android:process=":alarm_process">
+        </service>
     </application>
 
-    <uses-permission android:name="com.android.alarm.permission.SET_ALARM"/>
+    <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
+
 </manifest>

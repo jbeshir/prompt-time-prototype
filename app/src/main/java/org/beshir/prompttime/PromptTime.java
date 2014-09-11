@@ -7,10 +7,6 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.media.AudioManager;
-import android.media.Ringtone;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.CountDownTimer;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBar;
@@ -42,7 +38,6 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
     private static boolean updatingTimeBlockState = false;
 
     private static BaseAdapter activeTimesListAdapter = null;
-    private static Ringtone currentlyPlayingRingtone = null;
 
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
@@ -154,38 +149,9 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
         // Play our alarm sound, if we are showing a prompt,
         // and halt it otherwise.
         if (nextEventTime == currentTime) {
-            if (currentlyPlayingRingtone == null) {
-                Uri alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
-
-                if(alert == null){
-                    // alert is null, using backup
-                    alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-
-                    // I can't see this ever being null (as always have a default notification)
-                    // but just incase
-                    if(alert == null) {
-                        // alert backup is null, using 2nd backup
-                        alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
-                    }
-                }
-
-                currentlyPlayingRingtone = RingtoneManager.getRingtone(getApplicationContext(), alert);
-                currentlyPlayingRingtone.setStreamType(AudioManager.STREAM_NOTIFICATION);
-                currentlyPlayingRingtone.play();
-
-                // Mute music temporarily while our notification sound plays.
-                AudioManager audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
-                audioManager.setStreamSolo(AudioManager.STREAM_NOTIFICATION, true);
-            }
+            startService(new Intent(this, AlarmService.class).putExtra("alarm_state", true));
         } else {
-            if (currentlyPlayingRingtone != null) {
-                currentlyPlayingRingtone.stop();
-                currentlyPlayingRingtone = null;
-
-                // Unmute music now our notification sound is over.
-                AudioManager audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
-                audioManager.setStreamSolo(AudioManager.STREAM_NOTIFICATION, false);
-            }
+            startService(new Intent(this, AlarmService.class).putExtra("alarm_state", false));
         }
 
         // If we're waiting for a prompt event, schedule an alarm when it arrives.
