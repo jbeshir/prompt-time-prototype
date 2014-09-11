@@ -3,6 +3,7 @@ package org.beshir.prompttime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 public class CountDownState {
 
@@ -25,6 +26,9 @@ public class CountDownState {
 
         int activeTimeBlockCount = storage.getCount();
 
+        // First, build a set of non-overlapping absolute time blocks,
+        // throughout the previous week and next week,
+        // by retrieving time blocks in that time period, then merging overlapping blocks.
         Date now = new Date();
 
         nextStartTimeSeconds = Long.MAX_VALUE;
@@ -32,7 +36,6 @@ public class CountDownState {
         long prevStartTimeSeconds = 0L;
         long prevEndTimeSeconds = 0L;
 
-        // Check times yesterday, today, and tomorrow.
         Calendar c = Calendar.getInstance();
         c.setTime(now);
         c.set(Calendar.HOUR_OF_DAY, 0);
@@ -40,11 +43,9 @@ public class CountDownState {
         c.set(Calendar.SECOND, 0);
         c.set(Calendar.MILLISECOND, 0);
 
-        ArrayList<Long> startTimes = new ArrayList<Long>();
-        ArrayList<Long> endTimes = new ArrayList<Long>();
-
-        c.add(Calendar.DAY_OF_MONTH, -1);
-        for (int day = -1; day < 2; day++) {
+        ArrayList<TimeBlock> timeBlockList = new ArrayList<TimeBlock>();
+        c.add(Calendar.DAY_OF_MONTH, -8);
+        for (int day = -8; day < 9; day++) {
 
             int dayOfWeek = convertDayOfWeek(c.get(Calendar.DAY_OF_WEEK));
             long dayStart = c.getTimeInMillis() / 1000;
@@ -62,38 +63,77 @@ public class CountDownState {
                 long ourStartTime = 60 * storage.getStartTime(i);
                 long ourEndTime = 60 * storage.getEndTime(i);
 
-                startTimes.add(dayStart + ourStartTime);
+                TimeBlock timeBlock = new TimeBlock();
+
+                timeBlock.startTime = dayStart + ourStartTime;
                 if (ourEndTime >= ourStartTime) {
-                    endTimes.add(dayStart + ourEndTime);
+                    timeBlock.endTime = dayStart + ourEndTime;
                 } else {
-                    endTimes.add(nextDayStart + ourEndTime);
+                    timeBlock.endTime = nextDayStart + ourEndTime;
                 }
+
+                timeBlockList.add(timeBlock);
             }
 
             c.add(Calendar.DAY_OF_MONTH, 1);
         }
 
-        // Figure out the next start time that doesn't coincide with an end time.
-        for (long time : startTimes) {
+        // For every time block, look for a time block whose start time is between its
+        // start time and end time, inclusive, and merge the two, then repeat.
+        // This gets us a list of strictly non-repeating blocks.
+        for (int i = 0; i < timeBlockList.size(); i++) {
+            TimeBlock currentTimeBlock = timeBlockList.get(i);
+            for (int j = i + 1; j < timeBlockList.size(); j++) {
+                TimeBlock otherTimeBlock = timeBlockList.get(j);
 
-            if (endTimes.contains(time)) {
-                continue;
+                // Two time blocks overlap if the start of either is >= the other's start,
+                // and <= the other's end.
+                boolean overlap = false;
+                if (otherTimeBlock.startTime >= currentTimeBlock.startTime
+                    && otherTimeBlock.startTime <= currentTimeBlock.endTime) {
+                    overlap = true;
+                }
+
+                if (currentTimeBlock.startTime >= otherTimeBlock.startTime
+                        && currentTimeBlock.startTime <= otherTimeBlock.endTime) {
+                    overlap = true;
+                }
+
+                // If they overlap, create a single time block with the earlier start time
+                // and later end time, remove the other time block, and restart the checks.
+                if (overlap) {
+
+                    if (otherTimeBlock.startTime < currentTimeBlock.startTime) {
+                        currentTimeBlock.startTime = otherTimeBlock.startTime;
+                    }
+                    if (otherTimeBlock.endTime > currentTimeBlock.endTime) {
+                        currentTimeBlock.endTime = otherTimeBlock.endTime;
+                    }
+                    timeBlockList.remove(j);
+
+                    // Set to -1 so, after the loop's increment, we start over at 0.
+                    i = -1;
+                    break;
+                }
             }
+        }
 
-            if (time > currentTime && time < nextStartTimeSeconds) {
-                nextStartTimeSeconds = time;
+        // Figure out the next start time that doesn't coincide with an end time.
+        for (TimeBlock block : timeBlockList) {
+
+            if (block.startTime > currentTime && block.startTime < nextStartTimeSeconds) {
+                nextStartTimeSeconds = block.startTime;
             }
         }
 
         // Figure out the next end time that doesn't coincide with a start time.
-        for (long time : endTimes) {
+        // If it appears to be over a week away, that means there is no end,
+        // because our time blocks repeat weekly,
+        // but we will never have a prompt that far out anyway.
+        for (TimeBlock block : timeBlockList) {
 
-            if (startTimes.contains(time)) {
-                continue;
-            }
-
-            if (time > currentTime && time < nextEndTimeSeconds) {
-                nextEndTimeSeconds = time;
+            if (block.endTime > currentTime && block.endTime < nextEndTimeSeconds) {
+                nextEndTimeSeconds = block.endTime;
             }
         }
 
@@ -101,9 +141,9 @@ public class CountDownState {
         // It must be inclusive, so if we're exactly on a start time,
         // we don't think that we're not in active time because we
         // don't see an start time after our last end time.
-        for (long time : startTimes) {
-            if (time <= currentTime && time > prevStartTimeSeconds) {
-                prevStartTimeSeconds = time;
+        for (TimeBlock block : timeBlockList) {
+            if (block.startTime <= currentTime && block.startTime > prevStartTimeSeconds) {
+                prevStartTimeSeconds = block.startTime;
             }
         }
 
@@ -111,9 +151,9 @@ public class CountDownState {
         // It must be inclusive, so if we're exactly on an end time,
         // we don't think that we're still in active time because we
         // don't see an end time after our last start time.
-        for (long time : endTimes) {
-            if (time <= currentTime && time > prevEndTimeSeconds) {
-                prevEndTimeSeconds = time;
+        for (TimeBlock block : timeBlockList) {
+            if (block.endTime <= currentTime && block.endTime > prevEndTimeSeconds) {
+                prevEndTimeSeconds = block.endTime;
             }
         }
 
@@ -193,5 +233,11 @@ public class CountDownState {
             default:
                 throw new RuntimeException("Someone added an extra day to the week.");
         }
+    }
+
+    private static class TimeBlock
+    {
+        public long startTime;
+        public long endTime;
     }
 }
