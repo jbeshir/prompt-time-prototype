@@ -1,6 +1,5 @@
 package org.beshir.prompttime;
 
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
@@ -10,11 +9,13 @@ import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.IBinder;
+import android.os.PowerManager;
 import android.support.v4.app.NotificationCompat;
 
 public class AlarmService extends Service {
 
     private Ringtone currentlyPlayingRingtone = null;
+    private PowerManager.WakeLock alarmWakeLock;
 
     public AlarmService() {
     }
@@ -37,26 +38,48 @@ public class AlarmService extends Service {
                 currentlyPlayingRingtone = null;
 
                 // Unmute music now our notification sound is over.
-                AudioManager audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+                AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
                 audioManager.setStreamSolo(AudioManager.STREAM_NOTIFICATION, false);
+
+                // Release our wake lock, if we have one.
+                if (alarmWakeLock != null) {
+                    alarmWakeLock.release();
+                }
+            }
+
+            // If the intent was from our wakeful broadcast receiver,
+            // complete the action.
+            if (intent != null && intent.getBooleanExtra("wakeful_broadcast", false)) {
+                AlarmWakefulReceiver.completeWakefulIntent(intent);
             }
 
             // Stop the service.
             stopSelf(startId);
+
             return START_NOT_STICKY;
         } else {
 
             // Start the alarm.
             if (currentlyPlayingRingtone == null) {
+
+                // Force the service to stay awake until the alarm stops.
+                if (alarmWakeLock == null) {
+                    alarmWakeLock = ((PowerManager)getSystemService(Context.POWER_SERVICE)).newWakeLock(
+                            PowerManager.PARTIAL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP,
+                            "prompt_time"
+                    );
+                }
+                alarmWakeLock.acquire();
+
                 Uri alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
 
-                if(alert == null){
+                if (alert == null) {
                     // alert is null, using backup
                     alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
 
                     // I can't see this ever being null (as always have a default notification)
                     // but just in case
-                    if(alert == null) {
+                    if (alert == null) {
                         // alert backup is null, using 2nd backup
                         alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
                     }
@@ -67,7 +90,7 @@ public class AlarmService extends Service {
                 currentlyPlayingRingtone.play();
 
                 // Mute music temporarily while our notification sound plays.
-                AudioManager audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+                AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
                 audioManager.setStreamSolo(AudioManager.STREAM_NOTIFICATION, true);
 
                 // Make ourselves a foreground service, suppressing automatic termination,
@@ -82,6 +105,12 @@ public class AlarmService extends Service {
                                 .setContentText("Your next prompt has arrived.")
                                 .setContentIntent(startAppIntent);
                 this.startForeground(1, mBuilder.build());
+            }
+
+            // If the intent was from our wakeful broadcast receiver,
+            // complete the action.
+            if (intent != null && intent.getBooleanExtra("wakeful_broadcast", false)) {
+                AlarmWakefulReceiver.completeWakefulIntent(intent);
             }
 
             return START_STICKY;

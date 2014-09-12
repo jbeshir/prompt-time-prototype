@@ -4,7 +4,6 @@ import java.util.Locale;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.CountDownTimer;
@@ -123,6 +122,8 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
         }
 
         // On receiving a new intent, always check whether we need to update our alarm state.
+        // This is important, because it means if due to a race between the alarm and
+        // the app being opened manually, the alarm
         onCountDownChanged(System.currentTimeMillis() / 1000);
     }
 
@@ -157,7 +158,7 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
         // If we're waiting for a prompt event, schedule an alarm when it arrives.
         // We cancel any existing alarm either way.
         AlarmManager alarmManager = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
-        Intent i = new Intent(this, PromptTimeAlarmBroadcastReceiver.class);
+        Intent i = new Intent(this, AlarmWakefulReceiver.class);
         PendingIntent alarmPendingIntent = PendingIntent.getBroadcast(this, 0, i, 0);
         alarmManager.cancel(alarmPendingIntent);
         if (nextEventTime != currentTime && nextEventTime != Long.MAX_VALUE && nextEventPrompt) {
@@ -266,18 +267,6 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
     protected void onDestroy() {
         countDownState.removeListener(this);
         super.onDestroy();
-    }
-
-    public static class PromptTimeAlarmBroadcastReceiver extends BroadcastReceiver {
-
-        public void onReceive(Context context, Intent intent) {
-
-            //start activity
-            Intent i = new Intent();
-            i.setClassName("org.beshir.prompttime", "org.beshir.prompttime.PromptTime");
-            i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            context.startActivity(i);
-        }
     }
 
     static class ActiveTimesBlockViewHolder {
