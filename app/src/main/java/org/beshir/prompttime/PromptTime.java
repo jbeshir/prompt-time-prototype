@@ -18,6 +18,7 @@ import android.support.v4.view.ViewPager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -56,6 +57,7 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_prompt_time);
 
         // Set up the action bar.
@@ -478,6 +480,7 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
 
         private CountDownTimer countDownTimer;
         private View rootView;
+        private boolean screenForcedOn = false;
 
         public SectionPromptFragment() {
         }
@@ -496,8 +499,27 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
             if (nextEvent == currentTime) {
                 ((TextView) rootView.findViewById(R.id.countdown)).setText("Prompt!");
                 visibilityNextPromptButtons = View.VISIBLE;
+
+                // Allow us to show over the user's lock screen, with the screen forced on.
+                if (!screenForcedOn) {
+                    getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
+                            WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
+                            WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
+                            WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+                    screenForcedOn = true;
+                }
+
             } else if (nextEvent == Long.MAX_VALUE) {
                 ((TextView) rootView.findViewById(R.id.countdown)).setText("None");
+
+                // Stop showing us over the lock screen, with the screen forced on.
+                if (screenForcedOn) {
+                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
+                            WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
+                            WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
+                            WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+                    screenForcedOn = false;
+                }
             } else {
                 countDownTimer = new CountDownTimer(countDownTime * 1000, 1000) {
 
@@ -521,6 +543,15 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
                 }.start();
                 if (inActiveTime) {
                     visibilityNowButton = View.VISIBLE;
+                }
+
+                // Stop showing us over the lock screen, with the screen forced on.
+                if (screenForcedOn) {
+                    getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
+                            WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
+                            WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
+                            WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+                    screenForcedOn = false;
                 }
             }
 
@@ -556,6 +587,15 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
             }
 
             rootView = null;
+
+            // Stop showing us over the lock screen, with the screen forced on.
+            if (screenForcedOn) {
+                getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
+                        WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
+                        WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
+                        WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+                screenForcedOn = false;
+            }
 
             // Stop receiving notifications of changes to our countdown state.
             countDownState.removeListener(this);

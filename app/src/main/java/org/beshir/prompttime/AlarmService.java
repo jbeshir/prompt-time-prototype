@@ -105,6 +105,12 @@ public class AlarmService extends Service {
                                 .setContentText("Your next prompt has arrived.")
                                 .setContentIntent(startAppIntent);
                 this.startForeground(1, mBuilder.build());
+
+                // Start up the app so the user has the prompt presented to them.
+                Intent appIntent = new Intent();
+                appIntent.setClassName("org.beshir.prompttime", "org.beshir.prompttime.PromptTime");
+                appIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                getApplicationContext().startActivity(appIntent);
             }
 
             // If the intent was from our wakeful broadcast receiver,
