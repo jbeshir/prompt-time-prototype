@@ -53,6 +53,12 @@ public class AlarmService extends Service {
                 AlarmWakefulReceiver.completeWakefulIntent(intent);
             }
 
+            // If the intent was from our wakeful boot broadcast receiver,
+            // complete the action.
+            if (intent != null && intent.getBooleanExtra("wakeful_boot_broadcast", false)) {
+                BootReceiver.completeWakefulIntent(intent);
+            }
+
             // Stop the service.
             stopSelf(startId);
 
@@ -117,6 +123,12 @@ public class AlarmService extends Service {
             // complete the action.
             if (intent != null && intent.getBooleanExtra("wakeful_broadcast", false)) {
                 AlarmWakefulReceiver.completeWakefulIntent(intent);
+            }
+
+            // If the intent was from our wakeful boot broadcast receiver,
+            // complete the action.
+            if (intent != null && intent.getBooleanExtra("wakeful_boot_broadcast", false)) {
+                BootReceiver.completeWakefulIntent(intent);
             }
 
             return START_STICKY;
