@@ -21,6 +21,7 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.TimePicker;
@@ -555,6 +556,15 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
                 }
             }
 
+			// Adjust the proportion of the UI given to the countdown display,
+			// so it fills whatever space is remaining after the buttons.
+            View countdownView = rootView.findViewById(R.id.countdown);
+            LinearLayout.LayoutParams countdownLayoutParams = (LinearLayout.LayoutParams)countdownView.getLayoutParams();
+            countdownLayoutParams.weight = 5f
+                    - (visibilityNextPromptButtons == View.VISIBLE ? 4f : 0f)
+                    - (visibilityNowButton == View.VISIBLE ? 1f : 0f);
+            countdownView.setLayoutParams(countdownLayoutParams);
+
             rootView.findViewById(R.id.prompt_now_button).setVisibility(visibilityNowButton);
             rootView.findViewById(R.id.prompt_five_button).setVisibility(visibilityNextPromptButtons);
             rootView.findViewById(R.id.prompt_fifteen_button).setVisibility(visibilityNextPromptButtons);
@@ -567,7 +577,6 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
                                  Bundle savedInstanceState) {
             rootView = inflater.inflate(R.layout.fragment_section_prompt, container, false);
 
-            ((TextView)rootView.findViewById(R.id.prompt_label)).setText("Countdown");
             ((TextView)rootView.findViewById(R.id.countdown)).setText("--:--");
 
             // Register with our countdown state to receive notifications of changes.
