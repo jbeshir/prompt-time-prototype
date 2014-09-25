@@ -106,7 +106,7 @@ public class AlarmService extends Service {
                 PendingIntent startAppIntent = PendingIntent.getActivity(this, 0, i, 0);
                 NotificationCompat.Builder mBuilder =
                         new NotificationCompat.Builder(this)
-                                .setSmallIcon(R.drawable.ic_launcher)
+                                .setSmallIcon(R.drawable.ic_stat_notify)
                                 .setContentTitle("Prompt Time")
                                 .setContentText("Your next prompt has arrived.")
                                 .setContentIntent(startAppIntent);
