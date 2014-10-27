@@ -531,7 +531,8 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
 
                         long currentTime = System.currentTimeMillis() / 1000;
                         long secondsToGo = countDownState.getNextEvent(currentTime) - currentTime;
-                        ((TextView) rootView.findViewById(R.id.countdown)).setText(Long.toString(secondsToGo));
+                        String formatted = TimeFormatter.formatDuration(secondsToGo);
+                        ((TextView) rootView.findViewById(R.id.countdown)).setText(formatted);
                     }
 
                     public void onFinish() {
@@ -577,7 +578,8 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
                                  Bundle savedInstanceState) {
             rootView = inflater.inflate(R.layout.fragment_section_prompt, container, false);
 
-            ((TextView)rootView.findViewById(R.id.countdown)).setText("--:--");
+            ((AutoResizeTextView)rootView.findViewById(R.id.countdown)).enableSizeCache(false);
+            ((TextView)rootView.findViewById(R.id.countdown)).setText("");
 
             // Register with our countdown state to receive notifications of changes.
             countDownState.addListener(this);
