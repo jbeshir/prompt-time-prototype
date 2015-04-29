@@ -49,13 +49,13 @@ public class AlarmService extends Service {
 
             // If the intent was from our wakeful broadcast receiver,
             // complete the action.
-            if (intent != null && intent.getBooleanExtra("wakeful_broadcast", false)) {
+            if (intent.getBooleanExtra("wakeful_broadcast", false)) {
                 AlarmWakefulReceiver.completeWakefulIntent(intent);
             }
 
             // If the intent was from our wakeful boot broadcast receiver,
             // complete the action.
-            if (intent != null && intent.getBooleanExtra("wakeful_boot_broadcast", false)) {
+            if (intent.getBooleanExtra("wakeful_boot_broadcast", false)) {
                 BootReceiver.completeWakefulIntent(intent);
             }
 
