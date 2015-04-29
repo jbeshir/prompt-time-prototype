@@ -1,5 +1,7 @@
 package org.beshir.prompttime;
 
+import android.os.AsyncTask;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -10,6 +12,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.util.HashMap;
 
 public class ActiveTimesStorage {
 
@@ -18,6 +21,9 @@ public class ActiveTimesStorage {
 
     private JSONArray activeTimeBlocks = new JSONArray();
     private long nextPromptTimeSeconds = 0L;
+
+    private static HashMap<String, Boolean> ongoingSaves = new HashMap<String, Boolean>();
+    private static HashMap<String, String> waitingSaves = new HashMap<String, String>();
 
     public ActiveTimesStorage(String activeTimesPath, String nextPromptTimePath) {
         this.activeTimesPath = activeTimesPath;
@@ -256,12 +262,42 @@ public class ActiveTimesStorage {
     }
 
     private static void writeStringToFile(String path, String content) {
-        try {
-            PrintWriter out = new PrintWriter(path);
-            out.print(content);
-            out.close();
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
+        if (ongoingSaves.containsKey(path)) {
+            waitingSaves.put(path, content);
+        } else {
+            ongoingSaves.put(path, true);
+            new SaveTask().execute(path, content);
+        }
+    }
+
+    private static class SaveTask extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected String doInBackground(String... strings) {
+            String path = strings[0];
+            String content = strings[1];
+
+            try {
+                PrintWriter out = new PrintWriter(path);
+                out.print(content);
+                out.close();
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+
+            return path;
+        }
+
+        @Override
+        protected void onPostExecute(String path) {
+            if (waitingSaves.containsKey(path)) {
+                String content = waitingSaves.remove(path);
+                new SaveTask().execute(path, content);
+            } else {
+                ongoingSaves.remove(path);
+            }
+
+            super.onPostExecute(path);
         }
     }
 }
