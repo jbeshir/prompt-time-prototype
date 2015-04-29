@@ -2,10 +2,12 @@ package org.beshir.prompttime;
 
 import java.util.Locale;
 
+import android.annotation.TargetApi;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.CountDownTimer;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBar;
@@ -145,6 +147,7 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
     public void onTabReselected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
     }
 
+    @TargetApi(21)
     public void onCountDownChanged(long currentTime) {
 
         long nextEventTime = countDownState.getNextEvent(currentTime);
@@ -165,7 +168,14 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
         PendingIntent alarmPendingIntent = PendingIntent.getBroadcast(this, 0, i, 0);
         alarmManager.cancel(alarmPendingIntent);
         if (nextEventTime != currentTime && nextEventTime != Long.MAX_VALUE && nextEventPrompt) {
-            alarmManager.set(AlarmManager.RTC_WAKEUP, nextEventTime * 1000, alarmPendingIntent);
+            // If we target an SDK above 19, on newer devices, set behaves inexactly.
+            // As a result we need to use setExact on newer devices,
+            // and set on older ones where setExact doesn't exist.
+            if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, nextEventTime * 1000, alarmPendingIntent);
+            } else {
+                alarmManager.set(AlarmManager.RTC_WAKEUP, nextEventTime * 1000, alarmPendingIntent);
+            }
         }
     }
 
