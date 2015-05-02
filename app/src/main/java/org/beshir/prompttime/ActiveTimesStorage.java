@@ -1,17 +1,16 @@
 package org.beshir.prompttime;
 
 import android.os.AsyncTask;
+import android.support.v4.util.AtomicFile;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.util.HashMap;
 
 public class ActiveTimesStorage {
@@ -22,7 +21,7 @@ public class ActiveTimesStorage {
     private JSONArray activeTimeBlocks = new JSONArray();
     private long nextPromptTimeSeconds = 0L;
 
-    private static HashMap<String, Boolean> ongoingSaves = new HashMap<String, Boolean>();
+    private static HashMap<String, String> ongoingSaves = new HashMap<String, String>();
     private static HashMap<String, String> waitingSaves = new HashMap<String, String>();
 
     public ActiveTimesStorage(String activeTimesPath, String nextPromptTimePath) {
@@ -44,11 +43,7 @@ public class ActiveTimesStorage {
             nextPromptTimeSeconds = 0L;
         }
 
-        if (activeTimeBlocks.length() == 0) {
-            return false;
-        } else {
-            return true;
-        }
+        return activeTimeBlocks.length() != 0;
     }
 
     public int getCount() {
@@ -241,17 +236,14 @@ public class ActiveTimesStorage {
     }
 
     private static String readFileAsString(String path) {
+        if (ongoingSaves.containsKey(path)) {
+            return ongoingSaves.get(path);
+        }
+
         try {
-            FileInputStream is = new FileInputStream(path);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-
-            StringBuilder sb = new StringBuilder();
-            String line = reader.readLine();
-            sb.append(line);
-
-            reader.close();
-
-            return sb.toString();
+            AtomicFile atomicFile = new AtomicFile(new File(path));
+            byte[] data = atomicFile.readFully();
+            return new String(data, "UTF-8");
         } catch (FileNotFoundException e) {
 
             // If there's no options file present, treat as empty.
@@ -265,7 +257,7 @@ public class ActiveTimesStorage {
         if (ongoingSaves.containsKey(path)) {
             waitingSaves.put(path, content);
         } else {
-            ongoingSaves.put(path, true);
+            ongoingSaves.put(path, content);
             new SaveTask().execute(path, content);
         }
     }
@@ -278,10 +270,11 @@ public class ActiveTimesStorage {
             String content = strings[1];
 
             try {
-                PrintWriter out = new PrintWriter(path);
-                out.print(content);
-                out.close();
-            } catch (FileNotFoundException e) {
+                AtomicFile atomicFile = new AtomicFile(new File(path));
+                FileOutputStream atomicOutputStream = atomicFile.startWrite();
+                atomicOutputStream.write(content.getBytes("UTF-8"));
+                atomicFile.finishWrite(atomicOutputStream);
+            } catch (IOException e) {
                 throw new RuntimeException(e);
             }
 
