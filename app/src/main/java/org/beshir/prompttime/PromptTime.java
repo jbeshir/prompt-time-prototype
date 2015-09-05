@@ -42,6 +42,9 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
 
     private static BaseAdapter activeTimesListAdapter = null;
 
+    private static boolean shortActivityTypeSelected = false;
+    private static boolean longActivityTypeSelected = false;
+
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
      * fragments for each of the sections. We use a
@@ -153,6 +156,18 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
         long nextEventTime = countDownState.getNextEvent(currentTime);
         boolean nextEventPrompt = countDownState.isNextEventPrompt();
 
+        // If we're not showing a prompt right now,
+        // clear any selected activity, so the user has to reselect it.
+        // Retrigger events and return, so other things update, too.
+        if (nextEventTime != currentTime
+                && (shortActivityTypeSelected || longActivityTypeSelected))
+        {
+            shortActivityTypeSelected = false;
+            longActivityTypeSelected = false;
+            countDownState.updateActiveTimeState(currentTime);
+            return;
+        }
+
         // Play our alarm sound, if we are showing a prompt,
         // and halt it otherwise.
         if (nextEventTime == currentTime) {
@@ -237,12 +252,32 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
         onSetActiveTimes(view);
     }
 
+    public void onLongActivity(View button) {
+        longActivityTypeSelected = true;
+        countDownState.updateActiveTimeState(System.currentTimeMillis() / 1000);
+    }
+
+    public void onShortActivity(View button) {
+        shortActivityTypeSelected = true;
+        countDownState.updateActiveTimeState(System.currentTimeMillis() / 1000);
+    }
+
     public void onPromptNow(View button) {
         countDownState.setPromptTimeDelay(0);
     }
 
+    public void onActivityReturn(View button) {
+        shortActivityTypeSelected = false;
+        longActivityTypeSelected = false;
+        countDownState.updateActiveTimeState(System.currentTimeMillis() / 1000);
+    }
+
     public void onPromptFive(View button) {
         countDownState.setPromptTimeDelay(5 * 60);
+    }
+
+    public void onPromptTen(View button) {
+        countDownState.setPromptTimeDelay(10 * 60);
     }
 
     public void onPromptFifteen(View button) {
@@ -506,10 +541,18 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
             boolean inActiveTime = countDownState.isInActiveTime();
             long countDownTime = nextEvent - currentTime;
             int visibilityNowButton = View.GONE;
-            int visibilityNextPromptButtons = View.GONE;
+            int visibilityActivityPromptButtons = View.GONE;
+            int visibilityLongTimePromptButtons = View.GONE;
+            int visibilityShortTimePromptButtons = View.GONE;
             if (nextEvent == currentTime) {
                 ((TextView) rootView.findViewById(R.id.countdown)).setText("Prompt!");
-                visibilityNextPromptButtons = View.VISIBLE;
+                if (shortActivityTypeSelected) {
+                    visibilityShortTimePromptButtons = View.VISIBLE;
+                } else if (longActivityTypeSelected) {
+                    visibilityLongTimePromptButtons = View.VISIBLE;
+                } else {
+                    visibilityActivityPromptButtons = View.VISIBLE;
+                }
 
                 // Allow us to show over the user's lock screen, with the screen forced on.
                 if (!screenForcedOn) {
@@ -571,16 +614,20 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
 			// so it fills whatever space is remaining after the buttons.
             View countdownView = rootView.findViewById(R.id.countdown);
             LinearLayout.LayoutParams countdownLayoutParams = (LinearLayout.LayoutParams)countdownView.getLayoutParams();
-            countdownLayoutParams.weight = 5f
-                    - (visibilityNextPromptButtons == View.VISIBLE ? 4f : 0f)
+            countdownLayoutParams.weight = 3f
+                    - (visibilityActivityPromptButtons == View.VISIBLE ? 2f : 0f)
+                    - (visibilityLongTimePromptButtons == View.VISIBLE ? 2f : 0f)
+                    - (visibilityShortTimePromptButtons == View.VISIBLE ? 2f : 0f)
                     - (visibilityNowButton == View.VISIBLE ? 1f : 0f);
             countdownView.setLayoutParams(countdownLayoutParams);
 
             rootView.findViewById(R.id.prompt_now_button).setVisibility(visibilityNowButton);
-            rootView.findViewById(R.id.prompt_five_button).setVisibility(visibilityNextPromptButtons);
-            rootView.findViewById(R.id.prompt_fifteen_button).setVisibility(visibilityNextPromptButtons);
-            rootView.findViewById(R.id.prompt_twenty_five_button).setVisibility(visibilityNextPromptButtons);
-            rootView.findViewById(R.id.prompt_hour_button).setVisibility(visibilityNextPromptButtons);
+            rootView.findViewById(R.id.prompt_activity_row_1).setVisibility(visibilityActivityPromptButtons);
+            rootView.findViewById(R.id.prompt_activity_row_2).setVisibility(visibilityActivityPromptButtons);
+            rootView.findViewById(R.id.prompt_long_time_row_1).setVisibility(visibilityLongTimePromptButtons);
+            rootView.findViewById(R.id.prompt_long_time_row_2).setVisibility(visibilityLongTimePromptButtons);
+            rootView.findViewById(R.id.prompt_short_time_row_1).setVisibility(visibilityShortTimePromptButtons);
+            rootView.findViewById(R.id.prompt_short_time_row_2).setVisibility(visibilityShortTimePromptButtons);
         }
 
         @Override

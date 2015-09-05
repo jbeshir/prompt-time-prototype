@@ -3,7 +3,7 @@ xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:weightSum="5">
+    android:weightSum="3">
 
     <org.beshir.prompttime.AutoResizeTextView
         android:id="@+id/countdown"
@@ -24,39 +24,176 @@ xmlns:tools="http://schemas.android.com/tools"
         android:onClick="onPromptNow"
         android:textAppearance="@android:style/TextAppearance.Large" />
 
-    <Button
-        android:id="@+id/prompt_five_button"
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/prompt_activity_row_1"
+        android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:text="@string/label_prompt_five"
-        android:onClick="onPromptFive"
-        android:textAppearance="@android:style/TextAppearance.Large" />
+        android:weightSum="2">
 
-    <Button
-        android:id="@+id/prompt_fifteen_button"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:text="@string/label_prompt_fifteen"
-        android:onClick="onPromptFifteen"
-        android:textAppearance="@android:style/TextAppearance.Large" />
+        <Button
+            android:id="@+id/prompt_activity_work_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="@string/label_activity_work"
+            android:onClick="onLongActivity"
+            android:textAppearance="@android:style/TextAppearance.Large" />
 
-    <Button
-        android:id="@+id/prompt_twenty_five_button"
+        <Button
+            android:id="@+id/prompt_activity_quick_task_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="@string/label_activity_quick_task"
+            android:onClick="onShortActivity"
+            android:textAppearance="@android:style/TextAppearance.Large" />
+
+    </LinearLayout>
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/prompt_activity_row_2"
+        android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:text="@string/label_prompt_twenty_five"
-        android:onClick="onPromptTwentyFive"
-        android:textAppearance="@android:style/TextAppearance.Large" />
-    <Button
-        android:id="@+id/prompt_hour_button"
+        android:weightSum="2">
+
+        <Button
+            android:id="@+id/prompt_activity_fun_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="@string/label_activity_fun"
+            android:onClick="onLongActivity"
+            android:textAppearance="@android:style/TextAppearance.Large" />
+
+        <Button
+            android:id="@+id/prompt_activity_short_break_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="@string/label_activity_short_break"
+            android:onClick="onShortActivity"
+            android:textAppearance="@android:style/TextAppearance.Large" />
+
+    </LinearLayout>
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/prompt_short_time_row_1"
+        android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:text="@string/label_prompt_hour"
-        android:onClick="onPromptHour"
-        android:textAppearance="@android:style/TextAppearance.Large" />
+        android:weightSum="2">
+
+        <Button
+            android:id="@+id/prompt_short_time_return_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="@string/label_prompt_return"
+            android:onClick="onActivityReturn"
+            android:textAppearance="@android:style/TextAppearance.Large" />
+
+        <Button
+            android:id="@+id/prompt_five_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="@string/label_prompt_five"
+            android:onClick="onPromptFive"
+            android:textAppearance="@android:style/TextAppearance.Large" />
+    </LinearLayout>
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/prompt_short_time_row_2"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:weightSum="2">
+
+        <Button
+            android:id="@+id/prompt_ten_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="@string/label_prompt_ten"
+            android:onClick="onPromptTen"
+            android:textAppearance="@android:style/TextAppearance.Large" />
+
+        <Button
+            android:id="@+id/prompt_short_fifteen_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="@string/label_prompt_fifteen"
+            android:onClick="onPromptFifteen"
+            android:textAppearance="@android:style/TextAppearance.Large" />
+
+    </LinearLayout>
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/prompt_long_time_row_1"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:weightSum="2">
+
+        <Button
+            android:id="@+id/prompt_long_time_return_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="@string/label_prompt_return"
+            android:onClick="onActivityReturn"
+            android:textAppearance="@android:style/TextAppearance.Large" />
+
+        <Button
+            android:id="@+id/prompt_long_fifteen_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="@string/label_prompt_fifteen"
+            android:onClick="onPromptFifteen"
+            android:textAppearance="@android:style/TextAppearance.Large" />
+    </LinearLayout>
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/prompt_long_time_row_2"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:weightSum="2">
+
+        <Button
+            android:id="@+id/prompt_twenty_five_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="@string/label_prompt_twenty_five"
+            android:onClick="onPromptTwentyFive"
+            android:textAppearance="@android:style/TextAppearance.Large" />
+
+        <Button
+            android:id="@+id/prompt_hour_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="@string/label_prompt_hour"
+            android:onClick="onPromptHour"
+            android:textAppearance="@android:style/TextAppearance.Large" />
+
+    </LinearLayout>
 
 </LinearLayout>

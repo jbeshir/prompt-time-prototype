@@ -10,8 +10,15 @@
     <string name="label_time_block_start">Start</string>
     <string name="label_time_block_end">End</string>
 
+    <string name="label_activity_work">Work</string>
+    <string name="label_activity_quick_task">Quick Task</string>
+    <string name="label_activity_fun">Fun</string>
+    <string name="label_activity_short_break">Short Break</string>
+
     <string name="label_prompt_now">Prompt Now</string>
+    <string name="label_prompt_return">Return</string>
     <string name="label_prompt_five">5 Minutes</string>
+    <string name="label_prompt_ten">10 Minutes</string>
     <string name="label_prompt_fifteen">15 Minutes</string>
     <string name="label_prompt_twenty_five">25 Minutes</string>
     <string name="label_prompt_hour">1 Hour</string>
