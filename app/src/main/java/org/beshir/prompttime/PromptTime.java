@@ -173,7 +173,7 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
         if (nextEventTime == currentTime) {
             startService(new Intent(this, AlarmService.class).putExtra("alarm_state", true));
         } else {
-            startService(new Intent(this, AlarmService.class).putExtra("alarm_state", false));
+            startService(new Intent(this, AlarmService.class).putExtra("alarm_state", false).putExtra("next_alarm_time", nextEventTime));
         }
 
         // If we're waiting for a prompt event, schedule an alarm when it arrives.

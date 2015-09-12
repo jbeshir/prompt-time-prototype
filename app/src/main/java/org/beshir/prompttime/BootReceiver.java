@@ -4,6 +4,7 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.support.v4.content.WakefulBroadcastReceiver;
 
 public class BootReceiver extends WakefulBroadcastReceiver {
@@ -34,6 +35,7 @@ public class BootReceiver extends WakefulBroadcastReceiver {
             updateServiceIntent.putExtra("alarm_state", true);
         } else {
             updateServiceIntent.putExtra("alarm_state", false);
+            updateServiceIntent.putExtra("next_alarm_time", nextEventTime);
         }
         updateServiceIntent.putExtra("wakeful_boot_broadcast", true);
         startWakefulService(context, updateServiceIntent);
@@ -45,7 +47,11 @@ public class BootReceiver extends WakefulBroadcastReceiver {
         PendingIntent alarmPendingIntent = PendingIntent.getBroadcast(context, 0, i, 0);
         alarmManager.cancel(alarmPendingIntent);
         if (nextEventTime != currentTime && nextEventTime != Long.MAX_VALUE && nextEventPrompt) {
-            alarmManager.set(AlarmManager.RTC_WAKEUP, nextEventTime * 1000, alarmPendingIntent);
+            if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, nextEventTime * 1000, alarmPendingIntent);
+            } else {
+                alarmManager.set(AlarmManager.RTC_WAKEUP, nextEventTime * 1000, alarmPendingIntent);
+            }
         }
     }
 }
