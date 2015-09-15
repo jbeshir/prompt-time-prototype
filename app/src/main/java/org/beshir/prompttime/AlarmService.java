@@ -55,11 +55,6 @@ public class AlarmService extends Service {
             wantToPlay = false;
             stopAlarm();
 
-            // Release our wake lock, if we have one.
-            if (alarmWakeLock != null) {
-                alarmWakeLock.release();
-            }
-
             // Show a notification telling the user how long it is until the next prompt,
             // if there is one.
             boolean showingNotification = false;
@@ -91,6 +86,11 @@ public class AlarmService extends Service {
             // complete the action.
             if (intent.getBooleanExtra("wakeful_boot_broadcast", false)) {
                 BootReceiver.completeWakefulIntent(intent);
+            }
+
+            // Release our wake lock, if we have one.
+            if (alarmWakeLock != null && alarmWakeLock.isHeld()) {
+                alarmWakeLock.release();
             }
 
             if (showingNotification) {
