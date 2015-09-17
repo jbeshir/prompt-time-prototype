@@ -196,7 +196,6 @@ public class AlarmService extends Service {
                     builder.setLegacyStreamType(AudioManager.STREAM_ALARM);
                     builder.setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION);
                     builder.setUsage(AudioAttributes.USAGE_ALARM);
-                    builder.setFlags(AudioAttributes.FLAG_AUDIBILITY_ENFORCED);
                     currentlyPlayingRingtone.setAudioAttributes(builder.build());
                 }
 
