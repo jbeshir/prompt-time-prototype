@@ -14,6 +14,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.PowerManager;
+import android.os.Vibrator;
 import android.support.v4.app.NotificationCompat;
 
 import java.text.DateFormat;
@@ -54,6 +55,10 @@ public class AlarmService extends Service {
             // Set that we no longer want to play an alarm, and stop any which is currently playing.
             wantToPlay = false;
             stopAlarm();
+
+
+            Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+            vibrator.cancel();
 
             // Show a notification telling the user how long it is until the next prompt,
             // if there is one.
@@ -198,6 +203,18 @@ public class AlarmService extends Service {
                 // Ensure volume is set to maximum.
                 // Incorrectly set volume may lead to missed alarms.
                 audioManager.setStreamVolume(AudioManager.STREAM_ALARM, audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM), 0);
+
+                // Make the phone vibrate in brief pulses while the alarm is playing.
+                // This draws attention if audio is directed to headphones or similar.
+                Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+                long[] vibratePattern = {0, 200, 1000};
+                if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    AudioAttributes.Builder builder = new AudioAttributes.Builder();
+                    builder.setUsage(AudioAttributes.USAGE_ALARM);
+                    vibrator.vibrate(vibratePattern, 0, builder.build());
+                } else {
+                    vibrator.vibrate(vibratePattern, 0);
+                }
 
                 currentlyPlayingRingtone.play();
             }
