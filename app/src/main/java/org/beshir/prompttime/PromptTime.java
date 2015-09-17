@@ -7,6 +7,7 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.os.Build;
 import android.os.CountDownTimer;
 import android.support.v7.app.ActionBarActivity;
@@ -65,6 +66,11 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_prompt_time);
+
+        // Ensure whenever the user manipulates the volume while in the app,
+        // it controls our alarm volume. This only works temporarily,
+        // because we set it to full whenever the alarm goes off.
+        setVolumeControlStream(AudioManager.STREAM_ALARM);
 
         // Set up the action bar.
         final ActionBar actionBar = getSupportActionBar();
