@@ -26,9 +26,9 @@ public class AlarmService extends Service {
     private Ringtone currentlyPlayingRingtone = null;
     private PowerManager.WakeLock alarmWakeLock;
     private AudioFocusChangeListener audioFocusChangeListener = new AudioFocusChangeListener();
+    private VolumeTicker volumeTicker;
     private boolean wantToPlay = false;
     private boolean haveFocus = false;
-
 
     public AlarmService() {
     }
@@ -56,7 +56,13 @@ public class AlarmService extends Service {
             wantToPlay = false;
             stopAlarm();
 
+            // Restore alarm volume to what it was before we started wanting to notify the user.
+            if (volumeTicker != null) {
+                volumeTicker.stop();
+                volumeTicker = null;
+            }
 
+            // Stop any current vibration pattern for the alarm.
             Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
             vibrator.cancel();
 
@@ -118,6 +124,7 @@ public class AlarmService extends Service {
                 alarmWakeLock.acquire();
 
                 wantToPlay = true;
+                volumeTicker = new VolumeTicker();
                 startAlarm();
 
                 // Make ourselves a foreground service, suppressing automatic termination,
@@ -201,7 +208,7 @@ public class AlarmService extends Service {
 
                 // Ensure volume is set to maximum.
                 // Incorrectly set volume may lead to missed alarms.
-                audioManager.setStreamVolume(AudioManager.STREAM_ALARM, audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM), 0);
+                audioManager.setStreamVolume(AudioManager.STREAM_ALARM, volumeTicker.getCurrentVolume(), 0);
 
                 // Make the phone vibrate in brief pulses while the alarm is playing.
                 // This draws attention if audio is directed to headphones or similar.
@@ -261,6 +268,63 @@ public class AlarmService extends Service {
             if (focusChange == AudioManager.AUDIOFOCUS_GAIN && wantToPlay) {
                 startAlarm();
             }
+        }
+    }
+
+    private class VolumeTicker {
+
+        private final int MILLISECONDS_TO_MAXIMUM = 60*1000;
+
+        private boolean running = true;
+        private int volumeToRestore;
+        private float currentVolume;
+        private int maximumVolume;
+
+        public VolumeTicker() {
+            currentVolume = 1;
+
+            final AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            maximumVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM);
+            volumeToRestore = audioManager.getStreamVolume(AudioManager.STREAM_ALARM);
+
+            final int tickSpacingEst = MILLISECONDS_TO_MAXIMUM / maximumVolume;
+            final float tickAmount =  tickSpacingEst < 100 ? 100.0f/tickSpacingEst : 1;
+            final int tickSpacing =  tickSpacingEst < 100 ? 100 : tickSpacingEst;
+
+            Runnable tick = new Runnable() {
+                @Override
+                public void run() {
+
+                    if (!running) {
+                        return;
+                    }
+
+                    if (maximumVolume > currentVolume) {
+                        currentVolume += tickAmount;
+                    } else {
+                        currentVolume = maximumVolume;
+                    }
+                    audioManager.setStreamVolume(AudioManager.STREAM_ALARM, getCurrentVolume(), 0);
+
+                    if ((int) (currentVolume + 0.5f) != maximumVolume) {
+                        new Handler(Looper.getMainLooper()).postDelayed(this, tickSpacing);
+                    }
+                }
+            };
+
+            currentVolume = tickAmount;
+            new Handler(Looper.getMainLooper()).postDelayed(tick, tickSpacing);
+        }
+
+        public void stop() {
+            running = false;
+
+            AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            audioManager.setStreamVolume(AudioManager.STREAM_ALARM, volumeToRestore, 0);
+        }
+
+        public int getCurrentVolume() {
+            return (int)(currentVolume + 0.5f);
         }
     }
 }
