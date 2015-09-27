@@ -74,12 +74,11 @@ public class AlarmService extends Service {
                 Intent i = new Intent(this, PromptTime.class);
                 PendingIntent startAppIntent = PendingIntent.getActivity(this, 0, i, 0);
 
-                DateFormat sdf = SimpleDateFormat.getDateTimeInstance();
                 NotificationCompat.Builder mBuilder =
                         new NotificationCompat.Builder(this)
                                 .setSmallIcon(R.drawable.ic_stat_notify)
                                 .setContentTitle("Prompt Time")
-                                .setContentText("Next prompt is at " + sdf.format(new Date(nextAlarmTime * 1000)))
+                                .setContentText("Next prompt is at " + formatNextPrompt(nextAlarmTime))
                                 .setOngoing(true)
                                 .setContentIntent(startAppIntent);
 
@@ -161,6 +160,19 @@ public class AlarmService extends Service {
 
             return START_STICKY;
         }
+    }
+
+    private String formatNextPrompt(long promptTimeSeconds) {
+        DateFormat sdf;
+
+        long currentTime = System.currentTimeMillis() / 1000;
+        if (promptTimeSeconds - currentTime < 23*60*60) {
+            sdf = SimpleDateFormat.getTimeInstance(SimpleDateFormat.SHORT);
+        } else {
+            sdf = SimpleDateFormat.getDateTimeInstance(SimpleDateFormat.SHORT, SimpleDateFormat.SHORT);
+        }
+
+        return sdf.format(new Date(promptTimeSeconds * 1000));
     }
 
     private void startAlarm() {

@@ -35,7 +35,9 @@ public class BootReceiver extends WakefulBroadcastReceiver {
             updateServiceIntent.putExtra("alarm_state", true);
         } else {
             updateServiceIntent.putExtra("alarm_state", false);
-            updateServiceIntent.putExtra("next_alarm_time", nextEventTime);
+            if (nextEventPrompt) {
+                updateServiceIntent.putExtra("next_alarm_time", nextEventTime);
+            }
         }
         updateServiceIntent.putExtra("wakeful_boot_broadcast", true);
         startWakefulService(context, updateServiceIntent);
