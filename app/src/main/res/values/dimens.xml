@@ -3,6 +3,15 @@
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
 
+    <!-- Font size and layout for time settings. -->
+    <dimen name="time_block_label_font_size">20sp</dimen>
+    <dimen name="time_block_time_font_size">30sp</dimen>
+    <dimen name="time_block_label_padding">10sp</dimen>
+    <dimen name="time_block_spacing">10sp</dimen>
+
     <!-- Maximum font size for the prompt time. -->
     <dimen name="prompt_font_size">200sp</dimen>
+
+    <!-- Padding around the prompt text. -->
+    <dimen name="prompt_padding">10sp</dimen>
 </resources>

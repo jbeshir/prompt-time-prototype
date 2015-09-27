@@ -12,6 +12,7 @@ xmlns:tools="http://schemas.android.com/tools"
         android:layout_weight="1"
         android:gravity="center_horizontal"
         android:textSize="@dimen/prompt_font_size"
+        android:padding="@dimen/prompt_padding"
         android:ellipsize="none"
         android:singleLine="true"/>
 

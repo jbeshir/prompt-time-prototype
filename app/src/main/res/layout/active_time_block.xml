@@ -11,6 +11,7 @@
         android:orientation="horizontal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:paddingTop="@dimen/time_block_spacing"
         android:gravity="center_vertical">
 
         <ToggleButton
@@ -76,48 +77,67 @@
             android:layout_height="wrap_content"
             android:textOn="Sun"
             android:textOff="Sun"
-            android:onClick="onSetActiveTimes"/>
+            android:onClick="onSetActiveTimes" />
 
     </LinearLayout>
 
-    <LinearLayout
-        android:id="@+id/start_time_row"
-        android:orientation="horizontal"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical">
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                 android:layout_width="fill_parent"
+                 android:layout_height="wrap_content"
+                 android:paddingTop="@dimen/time_block_spacing"
+                 android:paddingBottom="@dimen/time_block_spacing"
+                 android:gravity="center_vertical">
 
-        <TextView
-            android:id="@+id/start_time_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/label_time_block_start"/>
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center">
 
-        <TimePicker
-            android:id="@+id/start_time_picker"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+                <TextView
+                    android:id="@+id/start_time_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="@dimen/time_block_label_padding"
+                    android:textSize="@dimen/time_block_label_font_size"
+                    android:text="@string/label_time_block_start"/>
 
-    </LinearLayout>
+                <EditText
+                    android:id="@+id/start_time_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/time_block_time_font_size"
+                    android:focusable="false"
+                    android:onClick="onStartTimeEdit"/>
 
-    <LinearLayout
-        android:id="@+id/end_time_row"
-        android:orientation="horizontal"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical">
+            </LinearLayout>
 
-        <TextView
-            android:id="@+id/end_time_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/label_time_block_end"/>
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_weight="1"
+                android:gravity="center">
 
-        <TimePicker
-            android:id="@+id/end_time_picker"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+                <TextView
+                    android:id="@+id/end_time_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="@dimen/time_block_label_padding"
+                    android:textSize="@dimen/time_block_label_font_size"
+                    android:text="@string/label_time_block_end"/>
 
+                <EditText
+                    android:id="@+id/end_time_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/time_block_time_font_size"
+                    android:focusable="false"
+                    android:onClick="onEndTimeEdit"/>
+
+            </LinearLayout>
     </LinearLayout>
 
     <LinearLayout
@@ -125,6 +145,7 @@
         android:orientation="horizontal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:paddingBottom="@dimen/time_block_spacing"
         android:gravity="center_vertical">
 
         <Button
@@ -141,6 +162,6 @@
             android:text="@string/label_set_time_block"
             android:onClick="onSetActiveTimes"/>
 
-        </LinearLayout>
+    </LinearLayout>
 
 </LinearLayout>

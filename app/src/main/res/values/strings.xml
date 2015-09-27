@@ -6,9 +6,10 @@
     <string name="title_section_prompt">Prompt</string>
     <string name="label_set_time_block">Confirm</string>
     <string name="label_remove_time_block">Remove</string>
-    <string name="label_add_time_block">Add</string>
+    <string name="label_add_time_block">Add Prompt Time Block</string>
     <string name="label_time_block_start">Start</string>
     <string name="label_time_block_end">End</string>
+    <string name="time_edit">Edit</string>
 
     <string name="label_activity_work">Work</string>
     <string name="label_activity_quick_task">Quick Task</string>

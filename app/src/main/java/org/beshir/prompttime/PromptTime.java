@@ -1,10 +1,13 @@
 package org.beshir.prompttime;
 
+import java.text.SimpleDateFormat;
 import java.util.Locale;
 
 import android.annotation.TargetApi;
 import android.app.AlarmManager;
+import android.app.Dialog;
 import android.app.PendingIntent;
+import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
@@ -24,6 +27,7 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -76,7 +80,7 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
         final ActionBar actionBar = getSupportActionBar();
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
 
-        // Create the adapter that will return a fragment for each of the three
+        // Create the adapter that will return a fragment for each of the
         // primary sections of the activity.
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
 
@@ -200,6 +204,44 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
         }
     }
 
+    public void onStartTimeEdit(View view) {
+
+        // The grandparent of the view has our view information in a holder as a tag.
+        final ActiveTimesBlockViewHolder activeTimesBlock;
+        activeTimesBlock = (ActiveTimesBlockViewHolder)((View) view.getParent().getParent().getParent()).getTag();
+
+        int time = activeTimesBlock.startTime;
+        TimePickerDialog.OnTimeSetListener listener = new TimePickerDialog.OnTimeSetListener() {
+
+            public void onTimeSet(TimePicker view, int hours, int minutes) {
+                activeTimesBlock.startTime = hours * 60 + minutes;
+                activeTimesBlock.startTimeField.setText(formatTime(activeTimesBlock.startTime));
+                saveActiveTimeBlock(view, activeTimesBlock);
+            }
+        };
+
+        new TimePickerDialog(this, listener, time / 60, time % 60, true).show();
+    }
+
+    public void onEndTimeEdit(View view) {
+
+        // The grandparent of the view has our view information in a holder as a tag.
+        final ActiveTimesBlockViewHolder activeTimesBlock;
+        activeTimesBlock = (ActiveTimesBlockViewHolder)((View) view.getParent().getParent().getParent()).getTag();
+
+        int time = activeTimesBlock.endTime;
+        TimePickerDialog.OnTimeSetListener listener = new TimePickerDialog.OnTimeSetListener() {
+
+            public void onTimeSet(TimePicker view, int hours, int minutes) {
+                activeTimesBlock.endTime = hours * 60 + minutes;
+                activeTimesBlock.endTimeField.setText(formatTime(activeTimesBlock.endTime));
+                saveActiveTimeBlock(view, activeTimesBlock);
+            }
+        };
+
+        new TimePickerDialog(this, listener, time / 60, time % 60, true).show();
+    }
+
     public void onSetActiveTimes(View view) {
 
         // Ignore programmatic changes.
@@ -209,8 +251,12 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
 
         // The grandparent of the view has our view information in a holder as a tag.
         ActiveTimesBlockViewHolder activeTimesBlock;
-        activeTimesBlock = (ActiveTimesBlockViewHolder)((View) view.getParent().getParent()).getTag();
+        activeTimesBlock = (ActiveTimesBlockViewHolder) ((View) view.getParent().getParent()).getTag();
 
+        saveActiveTimeBlock(view, activeTimesBlock);
+    }
+
+    private void saveActiveTimeBlock(View view, ActiveTimesBlockViewHolder activeTimesBlock) {
         // If this is a new block, don't do anything unless this was the save button being pressed.
         // We wait until they save the block before acting.
         if (view.getId() != R.id.save_button
@@ -226,10 +272,8 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
         }
 
         // Save the current state of the list item to the file.
-        int startTime = activeTimesBlock.startTimePicker.getCurrentHour() * 60 +
-                activeTimesBlock.startTimePicker.getCurrentMinute();
-        int endTime = activeTimesBlock.endTimePicker.getCurrentHour() * 60 +
-                activeTimesBlock.endTimePicker.getCurrentMinute();
+        int startTime = activeTimesBlock.startTime;
+        int endTime = activeTimesBlock.endTime;
         activeTimesStorage.set(activeTimesBlock.blockIndex,
                 activeTimesBlock.mondayToggle.isChecked(),
                 activeTimesBlock.tuesdayToggle.isChecked(),
@@ -323,6 +367,11 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
         super.onDestroy();
     }
 
+    private static String formatTime(int time) {
+        return String.format("%02d", time / 60) + ":"
+                + String.format("%02d", time % 60);
+    }
+
     static class ActiveTimesBlockViewHolder {
         int blockIndex;
 
@@ -334,8 +383,10 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
         ToggleButton saturdayToggle;
         ToggleButton sundayToggle;
 
-        TimePicker startTimePicker;
-        TimePicker endTimePicker;
+        EditText startTimeField;
+        EditText endTimeField;
+        int startTime;
+        int endTime;
 
         Button saveTimesButton;
     }
@@ -383,11 +434,9 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
                 viewHolder.saturdayToggle = (ToggleButton)convertView.findViewById(R.id.saturday_toggle);
                 viewHolder.sundayToggle = (ToggleButton)convertView.findViewById(R.id.sunday_toggle);
 
-                viewHolder.startTimePicker = (TimePicker)convertView.findViewById(R.id.start_time_picker);
-                viewHolder.startTimePicker.setOnTimeChangedListener((TimePicker.OnTimeChangedListener)context);
+                viewHolder.startTimeField = (EditText)convertView.findViewById(R.id.start_time_text);
 
-                viewHolder.endTimePicker = (TimePicker)convertView.findViewById(R.id.end_time_picker);
-                viewHolder.endTimePicker.setOnTimeChangedListener((TimePicker.OnTimeChangedListener)context);
+                viewHolder.endTimeField = (EditText)convertView.findViewById(R.id.end_time_text);
 
                 viewHolder.saveTimesButton = (Button)convertView.findViewById(R.id.save_button);
 
@@ -408,12 +457,14 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
             viewHolder.sundayToggle.setChecked(activeTimesStorage.getDayOfWeek(i, 6));
 
             int startTime = activeTimesStorage.getStartTime(i);
-            viewHolder.startTimePicker.setCurrentHour(startTime / 60);
-            viewHolder.startTimePicker.setCurrentMinute(startTime % 60);
+            viewHolder.startTime = startTime;
+            String startTimeStr = formatTime(startTime);
+            viewHolder.startTimeField.setText(startTimeStr);
 
             int endTime = activeTimesStorage.getEndTime(i);
-            viewHolder.endTimePicker.setCurrentHour(endTime / 60);
-            viewHolder.endTimePicker.setCurrentMinute(endTime % 60);
+            viewHolder.endTime = endTime;
+            String endTimeStr = formatTime(endTime);
+            viewHolder.endTimeField.setText(endTimeStr);
 
             int showSave = i == activeTimesStorage.getCount() ? View.VISIBLE : View.GONE;
             viewHolder.saveTimesButton.setVisibility(showSave);
