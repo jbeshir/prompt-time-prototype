@@ -435,8 +435,22 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
                 viewHolder.sundayToggle = (ToggleButton)convertView.findViewById(R.id.sunday_toggle);
 
                 viewHolder.startTimeField = (EditText)convertView.findViewById(R.id.start_time_text);
+                viewHolder.startTimeField.setOnClickListener(new View.OnClickListener() {
+
+                    @Override
+                    public void onClick(View view) {
+                        ((PromptTime)context).onStartTimeEdit(view);
+                    }
+                });
 
                 viewHolder.endTimeField = (EditText)convertView.findViewById(R.id.end_time_text);
+                viewHolder.endTimeField.setOnClickListener(new View.OnClickListener() {
+
+                    @Override
+                    public void onClick(View view) {
+                        ((PromptTime)context).onEndTimeEdit(view);
+                    }
+                });
 
                 viewHolder.saveTimesButton = (Button)convertView.findViewById(R.id.save_button);
 

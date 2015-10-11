@@ -16,6 +16,14 @@
     <string name="label_activity_fun">Fun</string>
     <string name="label_activity_short_break">Short Break</string>
 
+    <string name="label_time_block_toggle_monday">M</string>
+    <string name="label_time_block_toggle_tuesday">T</string>
+    <string name="label_time_block_toggle_wednesday">W</string>
+    <string name="label_time_block_toggle_thursday">T</string>
+    <string name="label_time_block_toggle_friday">F</string>
+    <string name="label_time_block_toggle_saturday">S</string>
+    <string name="label_time_block_toggle_sunday">S</string>
+
     <string name="label_prompt_now">Prompt Now</string>
     <string name="label_prompt_return">Return</string>
     <string name="label_prompt_five">5 Minutes</string>

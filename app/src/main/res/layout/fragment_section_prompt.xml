@@ -3,7 +3,8 @@ xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:weightSum="3">
+    android:weightSum="3"
+              tools:context=".PromptTime">
 
     <org.beshir.prompttime.AutoResizeTextView
         android:id="@+id/countdown"

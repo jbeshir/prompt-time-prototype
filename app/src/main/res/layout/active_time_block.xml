@@ -1,58 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/active_times_block"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:id="@+id/active_times_block"
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:gravity="center_horizontal">
+    android:gravity="center_horizontal"
+              tools:context=".PromptTime">
 
     <LinearLayout
         android:id="@+id/weekday_toggles"
         android:orientation="horizontal"
-        android:layout_width="wrap_content"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:paddingTop="@dimen/time_block_spacing"
         android:gravity="center_vertical">
 
         <ToggleButton
             android:id="@+id/monday_toggle"
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textOn="Mon"
-            android:textOff="Mon"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:textOn="@string/label_time_block_toggle_monday"
+            android:textOff="@string/label_time_block_toggle_monday"
             android:onClick="onSetActiveTimes"/>
 
         <ToggleButton
             android:id="@+id/tuesday_toggle"
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textOn="Tue"
-            android:textOff="Tue"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:textOn="@string/label_time_block_toggle_tuesday"
+            android:textOff="@string/label_time_block_toggle_tuesday"
             android:onClick="onSetActiveTimes"/>
 
         <ToggleButton
             android:id="@+id/wednesday_toggle"
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textOn="Wed"
-            android:textOff="Wed"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:textOn="@string/label_time_block_toggle_wednesday"
+            android:textOff="@string/label_time_block_toggle_wednesday"
             android:onClick="onSetActiveTimes"/>
 
         <ToggleButton
             android:id="@+id/thursday_toggle"
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textOn="Thur"
-            android:textOff="Thur"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:textOn="@string/label_time_block_toggle_thursday"
+            android:textOff="@string/label_time_block_toggle_thursday"
             android:onClick="onSetActiveTimes"/>
 
         <ToggleButton
             android:id="@+id/friday_toggle"
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textOn="Fri"
-            android:textOff="Fri"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:textOn="@string/label_time_block_toggle_friday"
+            android:textOff="@string/label_time_block_toggle_friday"
             android:onClick="onSetActiveTimes"/>
+
+        <ToggleButton
+            android:id="@+id/saturday_toggle"
+            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:textOn="@string/label_time_block_toggle_saturday"
+            android:textOff="@string/label_time_block_toggle_saturday"
+            android:onClick="onSetActiveTimes"/>
+
+        <ToggleButton
+            android:id="@+id/sunday_toggle"
+            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:textOn="@string/label_time_block_toggle_sunday"
+            android:textOff="@string/label_time_block_toggle_sunday"
+            android:onClick="onSetActiveTimes" />
 
     </LinearLayout>
 
@@ -63,22 +88,6 @@
         android:layout_height="wrap_content"
         android:gravity="center_vertical">
 
-        <ToggleButton
-            android:id="@+id/saturday_toggle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textOn="Sat"
-            android:textOff="Sat"
-            android:onClick="onSetActiveTimes"/>
-
-        <ToggleButton
-            android:id="@+id/sunday_toggle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textOn="Sun"
-            android:textOff="Sun"
-            android:onClick="onSetActiveTimes" />
-
     </LinearLayout>
 
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -86,7 +95,8 @@
                  android:layout_height="wrap_content"
                  android:paddingTop="@dimen/time_block_spacing"
                  android:paddingBottom="@dimen/time_block_spacing"
-                 android:gravity="center_vertical">
+                 android:gravity="center_vertical"
+                 android:baselineAligned="false">
 
             <LinearLayout
                 android:orientation="horizontal"
@@ -108,8 +118,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textSize="@dimen/time_block_time_font_size"
-                    android:focusable="false"
-                    android:onClick="onStartTimeEdit"/>
+                    android:focusable="false"/>
 
             </LinearLayout>
 
@@ -134,8 +143,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textSize="@dimen/time_block_time_font_size"
-                    android:focusable="false"
-                    android:onClick="onEndTimeEdit"/>
+                    android:focusable="false"/>
 
             </LinearLayout>
     </LinearLayout>
