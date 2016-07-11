@@ -45,7 +45,7 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
     // Causes us to ignore changes, and not automatically save them.
     private static boolean updatingTimeBlockState = false;
 
-    private static BaseAdapter activeTimesListAdapter = null;
+    private static ActiveTimesListAdapter activeTimesListAdapter = null;
 
     private static boolean shortActivityTypeSelected = false;
     private static boolean longActivityTypeSelected = false;
@@ -196,7 +196,12 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
             // If we target an SDK above 19, on newer devices, set behaves inexactly.
             // As a result we need to use setExact on newer devices,
             // and set on older ones where setExact doesn't exist.
-            if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            // If we target an SDK above 23, on newer devices,
+            // setExact won't go off if the device is "idle".
+            // On such versions, we need to use setExactAndAllowWhileIdle.
+            if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, nextEventTime * 1000, alarmPendingIntent);
+            } else if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 alarmManager.setExact(AlarmManager.RTC_WAKEUP, nextEventTime * 1000, alarmPendingIntent);
             } else {
                 alarmManager.set(AlarmManager.RTC_WAKEUP, nextEventTime * 1000, alarmPendingIntent);
@@ -403,6 +408,10 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
             layoutInflater = LayoutInflater.from(context);
         }
 
+        public void updateContext(Context context) {
+            this.context = context;
+        }
+
         @Override
         public int getCount() {
             return activeTimesStorage.getCount() + (showNewTimeBlock ? 1 : 0);
@@ -562,7 +571,9 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
             ListView activeTimesListView = (ListView)rootView.findViewById(R.id.active_times_block_list);
 
             if (activeTimesListAdapter == null) {
-                activeTimesListAdapter = new ActiveTimesListAdapter(getActivity());
+                activeTimesListAdapter = new ActiveTimesListAdapter(this.getActivity());
+            } else {
+                activeTimesListAdapter.updateContext(this.getActivity());
             }
             activeTimesListView.setAdapter(activeTimesListAdapter);
 
