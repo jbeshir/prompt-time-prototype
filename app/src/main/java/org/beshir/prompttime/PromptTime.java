@@ -187,12 +187,14 @@ public class PromptTime extends ActionBarActivity implements ActionBar.TabListen
         }
 
         // If we're waiting for a prompt event, schedule an alarm when it arrives.
+        // We need to schedule an invocation even if it's the silent end of a session block,
+        // so we update the prompt.
         // We cancel any existing alarm either way.
         AlarmManager alarmManager = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
         Intent i = new Intent(this, AlarmWakefulReceiver.class);
         PendingIntent alarmPendingIntent = PendingIntent.getBroadcast(this, 0, i, 0);
         alarmManager.cancel(alarmPendingIntent);
-        if (nextEventTime != currentTime && nextEventTime != Long.MAX_VALUE && nextEventPrompt) {
+        if (nextEventTime != currentTime && nextEventTime != Long.MAX_VALUE) {
             // If we target an SDK above 19, on newer devices, set behaves inexactly.
             // As a result we need to use setExact on newer devices,
             // and set on older ones where setExact doesn't exist.
